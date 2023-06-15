@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+import dotenv
 import logging
 import os
 
@@ -70,7 +71,7 @@ MEDIA_URL = '/media/'
 # Application definition
 
 INSTALLED_APPS = [
-    "auth"
+    "authentication",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -122,7 +123,8 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("DB_NAME"),
         "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_HOST"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
         "PORT": os.getenv("DB_PORT"),
     }
 }
@@ -147,7 +149,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-AUTH_USER_MODEL = "auth.UserAccount"
+AUTH_USER_MODEL = "authentication.UserAccount"
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/

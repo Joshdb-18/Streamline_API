@@ -45,7 +45,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=28, unique=True)
-    password = models.CharField(max_length=128)
+    password = models.CharField(max_length=78)
     is_verified = models.BooleanField(default=False)
     token = models.UUIDField(default=uuid.uuid4, editable=False)
     is_superuser = models.BooleanField(default=False)
@@ -78,7 +78,8 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         """
-        Specifies the default ordering for the model's records
+        Specifies verbose name
         """
 
-        ordering = ["-date_joined"]
+        verbose_name = "User Account"
+        verbose_name_plural = "User Accounts"
