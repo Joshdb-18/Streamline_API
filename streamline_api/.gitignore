@@ -1,0 +1,37 @@
+# Virtual environment
+venv/
+Pipfile.lock
+
+# Static files
+/staticfiles/
+.DS_Store
+
+# Logs
+*.log
+**/migrations/*
+
+# Ignore static files
+**/static/*
+
+# Ignore media files
+**/media/*
+
+# Ignore coverage reports
+**/coverage/*
+
+# Ignore database files
+*.db
+
+
+# Other
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.bak
+*.orig
+*.tmp
+.idea/
+.vscode/
+
