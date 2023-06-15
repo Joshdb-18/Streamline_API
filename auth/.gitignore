@@ -22,6 +22,8 @@ Pipfile.lock
 # Ignore database files
 *.db
 
+# Ignore virtual environment file
+*.env
 
 # Other
 __pycache__/
