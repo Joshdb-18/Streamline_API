@@ -25,7 +25,7 @@ class UserManager(BaseUserManager):
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
-        user.save(using=self.__db)
+        user.save(using=self._db)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
@@ -44,8 +44,8 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     """
 
     email = models.EmailField(unique=True)
-    username = models.CharField(max_length=28, unique=True)
-    password = models.CharField(max_length=78)
+    username = models.CharField(max_length=178, unique=True)
+    password = models.CharField(max_length=178)
     is_verified = models.BooleanField(default=False)
     token = models.UUIDField(default=uuid.uuid4, editable=False)
     is_superuser = models.BooleanField(default=False)
