@@ -163,6 +163,7 @@ class RequestNewLinkView(APIView):
                     message=message,
                     from_email=sender_email,
                     recipient_list=recipient_list,
+                    html_message=email_html,
                     fail_silently=False,
                 )
                 response_data = {
