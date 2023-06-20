@@ -135,14 +135,23 @@ class RequestNewLinkView(APIView):
 
                 referer = request.headers.get("referer")
                 site_url = urlparse(referer).netloc
-                subject = "Verify your email"
-                message = (
-                    f"Hi {user.username},\n\n"
-                    "Thank you for signing up. To verify your account, "
-                    "please click on the following link:\n\n"
-                    f"http://{site_url}/auth/verify/{token}/\n\n"
-                    "This link expires in 3 days."
+                email_context = {
+                    "user": user,
+                    "site_url": site_url,
+                    "token": token,
+                }
+                email_html = render_to_string(
+                    "user/confirm_email.html",
+                    email_context
                 )
+                soup = BeautifulSoup(email_html, "html.parser")
+                subject = soup.title.string.strip()
+
+                message_elements = soup.find_all("td", class_="content-block")
+                message_parts = [
+                    element.get_text().strip() for element in message_elements
+                ]
+                message = "\n".join(message_parts)
                 sender_email = settings.DEFAULT_FROM_EMAIL
                 recipient_list = [email]
                 success_message = (
