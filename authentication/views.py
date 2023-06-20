@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.tokens import default_token_generator
 from django.template.loader import render_to_string
+from bs4 import BeautifulSoup
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -54,14 +55,23 @@ class RegistrationView(APIView):
                 user.save()
                 referer = request.headers.get("referer")
                 site_url = urlparse(referer).netloc
-                subject = "Verify your email"
-                message = (
-                    f"Hi {user.username},\n\n"
-                    "Thank you for signing up. To verify your account, "
-                    "please click on the following link:\n\n"
-                    f"http://{site_url}/auth/verify/{token}/\n\n"
-                    "This link expires in 3 days."
+                email_context = {
+                    "user": user,
+                    "site_url": site_url,
+                    "token": token,
+                }
+                email_html = render_to_string(
+                    "user/confirm_email.html",
+                    email_context
                 )
+                soup = BeautifulSoup(email_html, "html.parser")
+                subject = soup.title.string.strip()
+
+                message_elements = soup.find_all("td", class_="content-block")
+                message_parts = [
+                    element.get_text().strip() for element in message_elements
+                ]
+                message = "\n".join(message_parts)
                 sender_email = settings.DEFAULT_FROM_EMAIL
                 recipient_list = [email]
                 success_message = (
@@ -74,6 +84,7 @@ class RegistrationView(APIView):
                     message=message,
                     from_email=sender_email,
                     recipient_list=recipient_list,
+                    html_message=email_html,
                     fail_silently=False,
                 )
                 response_data = {
@@ -83,7 +94,6 @@ class RegistrationView(APIView):
                     "data": serializer.data,
                 }
                 return Response(response_data, status=status.HTTP_200_OK)
-
 
             # pylint: disable=broad-exception-caught
             except Exception as exception:
@@ -187,9 +197,7 @@ class LoginView(APIView):
                     },
                     status=status.HTTP_200_OK,
                 )
-            return Response(
-                {"success": False, "message": "User is not verified yet"}
-            )
+            return Response({"success": False, "message": "User is not verified yet"})
         return Response(
             {"error": "Invalid credentials"},
             status=status.HTTP_401_UNAUTHORIZED,
