@@ -7,7 +7,7 @@ import time
 import uuid
 
 from datetime import timedelta, datetime
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
@@ -53,8 +53,8 @@ class RegistrationView(APIView):
                 token = uuid.uuid4()
                 user.token = token
                 user.save()
-                referer = request.headers.get("referer")
-                site_url = urlparse(referer).netloc
+                site_url = request.headers.get("X-Requested-From")
+
                 email_context = {
                     "user": user,
                     "site_url": site_url,
@@ -284,17 +284,15 @@ def password_reset(request):
         token = default_token_generator.make_token(user) + ":" + str(timestamp)
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
 
-        referer = request.headers.get("referer")
-        domain = urlparse(referer).netloc
+        domain = request.headers.get("X-Requested-From")
         subject = "Password reset request"
         message = render_to_string(
             "user/password_reset_email.html",
             {
-                "protocol": "http",
+                "protocol": "https",
                 "domain": domain,
                 "uidb64": uidb64,
                 "token": token,
-                "site_name": settings.SITE_NAME,
             },
         )
         from_email = settings.DEFAULT_FROM_EMAIL
