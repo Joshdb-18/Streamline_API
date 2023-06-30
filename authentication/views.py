@@ -285,8 +285,7 @@ def password_reset(request):
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
 
         domain = request.headers.get("X-Requested-From")
-        subject = "Password reset request"
-        message = render_to_string(
+        email_html = render_to_string(
             "user/password_reset_email.html",
             {
                 "protocol": "https",
@@ -295,9 +294,19 @@ def password_reset(request):
                 "token": token,
             },
         )
-        from_email = settings.DEFAULT_FROM_EMAIL
-        to_email = email
-        send_mail(subject, message, from_email, [to_email])
+        soup = BeautifulSoup(email_html, "html.parser")
+        subject = soup.title.string.strip()
+        message = soup.find_all("p")[0].get_text()
+        sender_email = settings.DEFAULT_FROM_EMAIL
+        to_email = [email]
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=sender_email,
+            html_message=email_html,
+            recipient_list=to_email,
+            fail_silently=False,
+        )
         success_message = "Password reset link has been sent to your email."
         data = {
             "success": True,

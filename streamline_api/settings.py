@@ -64,7 +64,7 @@ SECRET_KEY = "django-insecure-&a@)4takbohz4rung99qswb#i^65_)2_piy8^j_us!1&!s4gs1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Set up Media ROOT
@@ -97,6 +97,29 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    'https://www.app.devnetwork.tech',
+    'https://app.devnetwork.tech',
+    'https://joshdb-18-obscure-space-chainsaw-pqjqrjg9vwpf76q7-3000.preview.app.github.dev',
+]
+
+CORS_ORIGIN_WHITELIST = [
+    'https://app.devnetwork.tech',
+    'https://www.app.devnetwork.tech',
+    'https://joshdb-18-obscure-space-chainsaw-pqjqrjg9vwpf76q7-3000.preview.app.github.dev/',
+]
+CORS_ALLOWED_METHODS = [
+    '*',
+]
+CORS_ALLOWED_HEADERS = [
+    '*'
+]
+CORS_EXPOSE_HEADERS = [
+    '*'
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "streamline_api.urls"
 
@@ -132,7 +155,6 @@ DATABASES = {
         "PORT": os.getenv("DB_PORT"),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
