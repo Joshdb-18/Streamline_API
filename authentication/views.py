@@ -133,8 +133,7 @@ class RequestNewLinkView(APIView):
                 user.token = token
                 user.save()
 
-                referer = request.headers.get("referer")
-                site_url = urlparse(referer).netloc
+                site_url = request.headers.get("X-Requested-From")
                 email_context = {
                     "user": user,
                     "site_url": site_url,
@@ -197,7 +196,7 @@ class LoginView(APIView):
             if user.is_verified:
                 login(request, user)
                 # pylint: disable=E1101
-                token = Token.objects.get_or_create(user=user)
+                token, created = Token.objects.get_or_create(user=user)
                 return Response(
                     {
                         "user": user.id,
