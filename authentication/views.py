@@ -25,12 +25,15 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
+
 import pytz
 
 from .models import UserAccount
 from .serializers import UserSerializer
 
-
+User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
@@ -60,10 +63,7 @@ class RegistrationView(APIView):
                     "site_url": site_url,
                     "token": token,
                 }
-                email_html = render_to_string(
-                    "user/confirm_email.html",
-                    email_context
-                )
+                email_html = render_to_string("user/confirm_email.html", email_context)
                 soup = BeautifulSoup(email_html, "html.parser")
                 subject = soup.title.string.strip()
 
@@ -139,10 +139,7 @@ class RequestNewLinkView(APIView):
                     "site_url": site_url,
                     "token": token,
                 }
-                email_html = render_to_string(
-                    "user/confirm_email.html",
-                    email_context
-                )
+                email_html = render_to_string("user/confirm_email.html", email_context)
                 soup = BeautifulSoup(email_html, "html.parser")
                 subject = soup.title.string.strip()
 
@@ -378,3 +375,33 @@ def password_reset_confirm(request):
         {"error": "Invalid password reset link."},
         status=status.HTTP_400_BAD_REQUEST,
     )
+
+
+class DeleteUserDataView(APIView):
+    """
+    API view for deleting user data.
+    """
+
+    def delete(self, request):
+        """
+        Handle DELETE request for deleting user data.
+        """
+        user_id = request.data.get("user_id")
+        user = get_object_or_404(UserAccount, id=user_id)
+
+        # Check if the user has permission to delete the data
+        if not request.user.is_superuser and request.user != user:
+            return Response(
+                {"error": "You do not have permission to delete this user data."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Logically delete user data
+        user.is_deleted = True
+        user.is_active = False  # Deactivate the user account
+        user.save()
+
+        return Response(
+            {"message": "User data deleted successfully."},
+            status=status.HTTP_200_OK,
+        )

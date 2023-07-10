@@ -17,6 +17,7 @@ class UserManager(BaseUserManager):
     """
     Custom user manager for managing user creation and authentication.
     """
+
     def create_user(self, email, password=None, **extra_fields):
         """
         Creates a new user with email and password fields
