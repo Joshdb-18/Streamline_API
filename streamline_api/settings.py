@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "anymail",
+    "youtube",
 ]
 
 MIDDLEWARE = [
@@ -97,6 +98,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 CORS_ALLOWED_ORIGINS = [
     'https://www.app.devnetwork.tech',
@@ -218,3 +221,8 @@ SERVER_EMAIL = os.getenv("SERVER_EMAIL")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
 SITE_NAME = "Streamline"
+
+
+TIKTOK_APP_ID = os.getenv("TIKTOK_APP_ID")
+TIKTOK_CLIENT_KEY = os.getenv("TIKTOK_CLIENT_KEY")
+TIKTOK_CLIENT_SECRET = os.getenv("TIKTOK_CLIENT_SECRET")

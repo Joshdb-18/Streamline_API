@@ -19,4 +19,5 @@ from django.urls import path, include
 urlpatterns = [
     path("streamline/admin/", admin.site.urls),
     path("", include("authentication.urls", namespace="authentication")),
+    path("", include("youtube.urls", namespace="youtube")),
 ]
