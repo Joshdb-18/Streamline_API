@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
 from .models import OAuthState
 
 current_dir = os.path.dirname(os.path.abspath(__file__))

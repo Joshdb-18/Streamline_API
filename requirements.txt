@@ -6,3 +6,6 @@ django-anymail==10.0
 psycopg2-binary==2.9.6
 bs4
 gunicorn==20.1.0
+google_auth_oauthlib
+google-auth
+google-api-python-client
