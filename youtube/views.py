@@ -60,7 +60,7 @@ def youtube_callback(request):
         json_path,
         scopes=["https://www.googleapis.com/auth/youtube.readonly"],
         state=state,
-        redirect_uri="https://www.app.devnetwork.tech/aggregator/youtube",
+        redirect_uri="https://www.app.devnetwork.tech/sites/youtube",
     )
 
     # Exchange the authorization code for an access token
