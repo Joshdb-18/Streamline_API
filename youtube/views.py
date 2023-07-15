@@ -1,4 +1,5 @@
 import os
+import json
 from google_auth_oauthlib.flow import InstalledAppFlow
 from django.http import JsonResponse
 from google.oauth2.credentials import Credentials
@@ -60,7 +61,7 @@ def youtube_callback(request):
         json_path,
         scopes=["https://www.googleapis.com/auth/youtube.readonly"],
         state=state,
-        redirect_uri="https://www.app.devnetwork.tech/sites/youtube",
+        redirect_uri="https://www.app.devnetwork.tech/user/youtube-callback",
     )
 
     # Exchange the authorization code for an access token
@@ -73,8 +74,13 @@ def youtube_callback(request):
     )
 
     # Store the credentials in the user's database
-    oauth_state = OAuthState.objects.get(user=request.user)
+    oauth_state = OAuthState.objects.filter(user=request.user).first()
     credentials = flow.credentials
+    
+    # Check if the credentials already have a refresh token
+    if not credentials.refresh_token:
+        # Set the refresh token from the authorization response
+        credentials.refresh_token = flow.credentials.refresh_token
     oauth_state.credentials = credentials.to_json()
     oauth_state.save()
     # request.session['youtube_credentials'] = credentials.to_json()
@@ -87,11 +93,18 @@ def youtube_callback(request):
 @permission_classes([IsAuthenticated])
 def get_uploaded_videos(request):
     # Retrieve the OAuthState object for the current user
-    oauth_state = OAuthState.objects.get(user=request.user)
+    oauth_state = OAuthState.objects.filter(user=request.user).first()
 
     # Retrieve the stored credentials from the OAuthState object
     credentials_json = oauth_state.credentials
-    credentials = Credentials.from_json(credentials_json)
+    credentials_info = json.loads(credentials_json)
+
+    # Create the credentials object from the deserialized JSON
+    credentials = Credentials.from_authorized_user_info(credentials_info)
+
+    # Check if the credentials are expires, and refresh if necessary
+    if credentials.expired and credentials.refresh_token:
+        credentials.refresh(Request())
 
     # Create the YouTube Data API client
     youtube = build("youtube", "v3", credentials=credentials)
@@ -110,7 +123,7 @@ def get_uploaded_videos(request):
 @permission_classes([IsAuthenticated])
 def upload_video(request):
     # Retrieve the stored credentials from the user database
-    oauth_state = OAuthState.objects.get(user=request.user)
+    oauth_state = OAuthState.objects.filter(user=request.user).first()
 
     # Retrieve the stored credentials from the OAuthState object
     credentials_json = oauth_state.credentials
