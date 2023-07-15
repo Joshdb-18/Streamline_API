@@ -4,13 +4,17 @@ from django.http import JsonResponse
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.authentication import TokenAuthentication
 from .models import OAuthState
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 json_path = os.path.join(current_dir, "streamline.json")
 
 
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def youtube_auth(request):
     # Define the OAuth 2.0 scopes required for YouTube API
     scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
@@ -29,16 +33,21 @@ def youtube_auth(request):
     )
 
     # Store the state in the database
-    OAuthState.objects.create(user=request.user, state=state)
+    user = request.user
+    OAuthState.objects.create(user=user, state=state)
     # request.session['oauth_state'] = state
 
     # Send the authorization url as a response to the frontend
     return JsonResponse({"url": authorization_url})
 
 
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def youtube_callback(request):
     # Retrieve the state from the query parameters
     state = request.GET.get("state")
+    code = request.GET.get("code")
 
     # Retrieve the corresponding OAuthState object from the database
     try:
@@ -51,11 +60,16 @@ def youtube_callback(request):
         json_path,
         scopes=["https://www.googleapis.com/auth/youtube.readonly"],
         state=state,
+        redirect_uri="https://www.app.devnetwork.tech/aggregator/youtube",
     )
 
     # Exchange the authorization code for an access token
+    temp_var = request.build_absolute_uri()
+    if "http:" in temp_var:
+        temp_var = "https:" + temp_var[5:]
     flow.fetch_token(
-        authorization_response=request.build_absolute_uri(),
+        authorization_response=temp_var,
+        code=code,
     )
 
     # Store the credentials in the user's database
@@ -68,6 +82,8 @@ def youtube_callback(request):
     return JsonResponse({"success": True})
 
 
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def get_uploaded_videos(request):
     # Retrieve the OAuthState object for the current user
@@ -90,6 +106,7 @@ def get_uploaded_videos(request):
 
 
 @api_view(["POST"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def upload_video(request):
     # Retrieve the stored credentials from the user database

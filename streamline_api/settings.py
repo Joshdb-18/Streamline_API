@@ -104,13 +104,13 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 CORS_ALLOWED_ORIGINS = [
     'https://www.app.devnetwork.tech',
     'https://app.devnetwork.tech',
-    'https://joshdb-18-obscure-space-chainsaw-pqjqrjg9vwpf76q7-3000.preview.app.github.dev',
+    'https://xtrjz4-3000.csb.app',
 ]
 
 CORS_ORIGIN_WHITELIST = [
     'https://app.devnetwork.tech',
     'https://www.app.devnetwork.tech',
-    'https://joshdb-18-obscure-space-chainsaw-pqjqrjg9vwpf76q7-3000.preview.app.github.dev/',
+    'https://xtrjz4-3000.csb.app',
 ]
 CORS_ALLOWED_METHODS = [
     '*',
