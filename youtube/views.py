@@ -202,7 +202,6 @@ def get_liked_videos(request):
             comments = item["statistics"].get("commentCount", 0)
             views = item["statistics"].get("viewCount", 0)
 
-            privacy_status = item.get("status", {}).get("privacyStatus", "unknown")
 
             video_info = {
                 "id": video_id,
@@ -212,7 +211,6 @@ def get_liked_videos(request):
                 "likes": likes,
                 "comments": comments,
                 "views": views,
-                "privacyStatus": privacy_status
             }
             videos.append(video_info)
 
