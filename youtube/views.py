@@ -112,19 +112,51 @@ def get_uploaded_videos(request):
     # Create the YouTube Data API client
     youtube = build("youtube", "v3", credentials=credentials)
 
+    # Retrieve the user's channel ID
+    channels_response = youtube.channels().list(part="id", mine=True).execute()
+    channel_id = channels_response["items"][0]["id"]
+
     # Perform the API request to get the user's uploaded videos
     videos = []
     next_page_token = None
 
     while True:
-        response = youtube.videos().list(
+        response = youtube.search().list(
             part="snippet",
+            channelId=channel_id,
+            type="video",
             maxResults=50,
-            myRating="like",
-            pageToken=next_page_token,
+            pageToken=next_page_token
         ).execute()
 
-        videos += response["items"]
+        # Extract relevant information from the response and append to the videos list
+        for item in response["items"]:
+            video_id = item["id"]["videoId"]
+            link = f"https://www.youtube.com/watch?v={video_id}"
+            title = item["snippet"]["title"]
+            description = item["snippet"]["description"]
+
+            # Retrieve the video statistics to get the like count, comment count, and view count
+            video_response = youtube.videos().list(
+                part="statistics",
+                id=video_id
+            ).execute()
+
+            statistics = video_response["items"][0]["statistics"]
+            like_count = int(statistics.get("likeCount", 0))
+            comment_count = int(statistics.get("commentCount", 0))
+            view_count = int(statistics.get("viewCount", 0))
+
+            video_info = {
+                "id": video_id,
+                "link": link,
+                "title": title,
+                "description": description,
+                "like_count": like_count,
+                "comment_count": comment_count,
+                "view_count": view_count
+            }
+            videos.append(video_info)
 
         next_page_token = response.get("nextPageToken")
         if not next_page_token:
@@ -132,44 +164,61 @@ def get_uploaded_videos(request):
 
     return JsonResponse({"videos": videos})
 
-@api_view(["POST"])
+
+@api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def upload_video(request):
-    # Retrieve the stored credentials from the user database
+def get_liked_videos(request):
+    # Retrieve the OAuthState object for the current user
     oauth_state = OAuthState.objects.filter(user=request.user).first()
 
     # Retrieve the stored credentials from the OAuthState object
     credentials_json = oauth_state.credentials
-    credentials = Credentials.from_json(credentials_json)
+    credentials_data = json.loads(credentials_json)
+    credentials = Credentials.from_authorized_user_info(credentials_data)
 
     # Create the YouTube Data API client
     youtube = build("youtube", "v3", credentials=credentials)
 
-    # Get the video details from the request
-    title = request.data.get("title")
-    description = request.data.get("description")
-    video_data = request.FILES.get("video")
-    privacy_status = request.data.get("privacy_status")
+    # Perform the API request to get the user's uploaded videos
+    videos = []
+    next_page_token = None
 
-    # Create a video resource
-    video = {
-        "snippet": {"title": title, "description": description},
-        "status": {"privacyStatus": privacy_status},
-    }
+    while True:
+        response = youtube.videos().list(
+            part="snippet, statistics",
+            maxResults=50,
+            myRating="like",
+            pageToken=next_page_token,
+        ).execute()
 
-    # Upload the video
-    media_body = MediaIoBaseUpload(
-        io.BytesIO(video_data.read()), chunksize=-1, resumable=True
-    )
-    insert_request = youtube.videos().insert(
-        part="snippet,status", body=video, media_body=media_body
-    )
-    response = insert_request.execute()
+        # Extract relevant information from the response and append to the videos list
+        for item in response["items"]:
+            video_id = item["id"]
+            link = f"https://www.youtube.com/watch?v={video_id}"
+            title = item["snippet"]["title"]
+            description = item["snippet"]["description"]
+            likes = item["statistics"].get("likeCount", 0)
+            comments = item["statistics"].get("commentCount", 0)
+            views = item["statistics"].get("viewCount", 0)
 
-    # Return the uploaded video details
-    video_id = response.get("id")
-    video_url = f"https://www.youtube.com/watch?v={video_id}"
-    video_details = {"video_id": video_id, "video_url": video_url}
+            privacy_status = item.get("status", {}).get("privacyStatus", "unknown")
 
-    return JsonResponse(video_details)
+            video_info = {
+                "id": video_id,
+                "link": link,
+                "title": title,
+                "description": description,
+                "likes": likes,
+                "comments": comments,
+                "views": views,
+                "privacyStatus": privacy_status
+            }
+            videos.append(video_info)
+
+        next_page_token = response.get("nextPageToken")
+        if not next_page_token:
+            break
+    
+    return JsonResponse({"videos": videos})
+
