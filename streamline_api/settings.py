@@ -104,13 +104,11 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 CORS_ALLOWED_ORIGINS = [
     'https://www.app.devnetwork.tech',
     'https://app.devnetwork.tech',
-    'https://xtrjz4-3000.csb.app',
 ]
 
 CORS_ORIGIN_WHITELIST = [
     'https://app.devnetwork.tech',
     'https://www.app.devnetwork.tech',
-    'https://xtrjz4-3000.csb.app',
 ]
 CORS_ALLOWED_METHODS = [
     '*',
