@@ -1,11 +1,12 @@
 from django.urls import path
-from .views import youtube_auth, youtube_callback, get_uploaded_videos, get_liked_videos
+from . import views
 
 app_name = "youtube"
 
 urlpatterns = [
-    path('api/v1/youtube/auth/', youtube_auth, name='youtube_auth'),
-    path('api/v1/youtube/callback', youtube_callback, name='youtube_callback'),
-    path('api/v1/youtube/uploaded-videos/', get_uploaded_videos, name='get_uploaded_videos'),
-    path('api/v1/youtube/liked-videos/', get_liked_videos, name="liked_videos"),
+    path('api/v1/youtube/auth/', views.youtube_auth, name='youtube_auth'),
+    path('api/v1/youtube/callback', views.youtube_callback, name='youtube_callback'),
+    path('api/v1/youtube/uploaded-videos/', views.get_uploaded_videos, name='get_uploaded_videos'),
+    path('api/v1/youtube/liked-videos/', views.get_liked_videos, name="liked_videos"),
+    path('api/v1/youtube/upload/', views.upload_video, name="credentials"),
 ]

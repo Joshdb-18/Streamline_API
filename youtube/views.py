@@ -1,22 +1,60 @@
 import os
+import tempfile
 import json
 from google_auth_oauthlib.flow import InstalledAppFlow
 from django.http import JsonResponse
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.response import Response
 from .models import OAuthState
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 json_path = os.path.join(current_dir, "streamline.json")
+
+category_mapping = {
+    "Film & Animation": "1",
+    "Autos & Vehicles": "2",
+    "Music": "10",
+    "Pets & Animals": "15",
+    "Sports": "17",
+    "Travel & Events": "19",
+    "Gaming": "20",
+    "People & Blogs": "22",
+    "Comedy": "23",
+    "Entertainment": "24",
+    "News & Politics": "25",
+    "Howto & Style": "26",
+    "Education": "27",
+    "Science & Technology": "28",
+    "Nonprofits & Activism": "29",
+}
+
+def get_category_id(category_name):
+    """
+    Get the category id based on the user's selected
+    category name
+    """
+    return category_mapping.get(category_name)
 
 
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def youtube_auth(request):
+    """
+    Handles user authentication
+    """
+    # Checks if the user has already connected their YouTube account
+    if OAuthState.objects.filter(user=request.user).exists():
+        custom_url = "https://app.devnetwork.tech/sites/youtube"
+        # User has already connected, redirect them to a different URL
+        return JsonResponse({"url": custom_url})
+
     # Define the OAuth 2.0 scopes required for YouTube API
     scopes = ["https://www.googleapis.com/auth/youtube.readonly", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/youtube.force-ssl"]
 
@@ -46,6 +84,9 @@ def youtube_auth(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def youtube_callback(request):
+    """
+    Handles callback
+    """
     # Retrieve the state from the query parameters
     state = request.GET.get("state")
     code = request.GET.get("code")
@@ -101,6 +142,9 @@ def youtube_callback(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def get_uploaded_videos(request):
+    """
+    Return a user videos
+    """
     # Retrieve the OAuthState object for the current user
     oauth_state = OAuthState.objects.filter(user=request.user).first()
 
@@ -169,6 +213,9 @@ def get_uploaded_videos(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def get_liked_videos(request):
+    """
+    Returns a user liked videos
+    """
     # Retrieve the OAuthState object for the current user
     oauth_state = OAuthState.objects.filter(user=request.user).first()
 
@@ -217,6 +264,75 @@ def get_liked_videos(request):
         next_page_token = response.get("nextPageToken")
         if not next_page_token:
             break
-    
+
     return JsonResponse({"videos": videos})
 
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def upload_video(request):
+    """
+    Enables a user to upload a vidoe directly to youtube
+    """
+    video_title = request.data.get('title')
+    video_description = request.data.get('description')
+    video_visibility = request.data.get('visibility')
+    video_category = request.data.get('category')
+    video_location = request.FILES.get('video')
+    video_made_for_kids = request.data.get('made_for_kids', False)
+
+    category_id = get_category_id(video_category)
+
+    # Retrieve the OAuthState object for the current user
+    oauth_state = OAuthState.objects.filter(user=request.user).first()
+
+    # Retrieve the stored credentials from the OAuthState object
+    credentials_json = oauth_state.credentials
+    credentials_data = json.loads(credentials_json)
+    credentials = Credentials.from_authorized_user_info(credentials_data)
+
+    # Create the YouTube Data API client
+    youtube = build("youtube", "v3", credentials=credentials)
+    # Create a temporary file to save the video content
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        for chunk in video_location.chunks():
+            temp_file.write(chunk)
+        temp_file_path = temp_file.name
+
+    try:
+        if video_location:
+            media = MediaFileUpload(
+                    temp_file_path,
+                    chunksize=-1,
+                    resumable=True
+                )
+            response = youtube.videos().insert(
+                part="snippet,status",
+                body={
+                    "snippet": {
+                        "title": video_title,
+                        "description": video_description,
+                        "categoryId": category_id,
+                        "defaultLanguage": "en",
+                        "defaultAudioLanguage": "en"
+                    },
+                    "status": {
+                        "privacyStatus": video_visibility,
+                        "selfDeclaredMadeForKids": video_made_for_kids
+                    }
+                },
+                media_body=media
+            ).execute()
+
+            # Video upload successful, return True
+            return Response({"success": True})
+        else:
+            # Video file not found in request, return error
+            return Response({"error": "Video file not found in the request."}, status=400)
+    except Exception as e:
+        # Video upload failed, return error message or additional details
+        return Response({"error": str(e)}, status=500)
+    finally:
+        # Delete the temporary file
+        os.remove(temp_file_path)
