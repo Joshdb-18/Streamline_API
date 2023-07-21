@@ -1,6 +1,8 @@
+import logging
 import os
 import tempfile
 import json
+
 from google_auth_oauthlib.flow import InstalledAppFlow
 from django.http import JsonResponse
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -14,7 +16,9 @@ from rest_framework.response import Response
 from .models import OAuthState
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-json_path = os.path.join(current_dir, "streamline.json")
+json_path = os.path.join(current_dir, "Sss.json")
+
+logger = logging.getLogger(__name__)
 
 category_mapping = {
     "Film & Animation": "1",
@@ -62,7 +66,7 @@ def youtube_auth(request):
     flow = InstalledAppFlow.from_client_secrets_file(
         json_path,
         scopes=scopes,
-        redirect_uri="https://www.app.devnetwork.tech/user/youtube-callback",
+        redirect_uri="https://app.devnetwork.tech/user/youtube-callback",
     )
 
     # Generate the authorization URL
@@ -102,7 +106,7 @@ def youtube_callback(request):
         json_path,
         scopes=["https://www.googleapis.com/auth/youtube.readonly", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/youtube.force-ssl"],
         state=state,
-        redirect_uri="https://www.app.devnetwork.tech/user/youtube-callback",
+        redirect_uri="https://app.devnetwork.tech/user/youtube-callback",
     )
 
     # Exchange the authorization code for an access token
@@ -332,7 +336,8 @@ def upload_video(request):
             return Response({"error": "Video file not found in the request."}, status=400)
     except Exception as e:
         # Video upload failed, return error message or additional details
-        return Response({"error": str(e)}, status=500)
+        logger.error(str(e))
+        return Response({"success": False})
     finally:
         # Delete the temporary file
         os.remove(temp_file_path)

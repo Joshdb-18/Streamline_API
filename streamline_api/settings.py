@@ -211,15 +211,14 @@ REST_FRAMEWORK = {
     ],
 }
 
-ANYMAIL = {
-    "MAILGUN_API_KEY": os.getenv("MAILGUN_API_KEY"),
-    "MAILGUN_SENDER_DOMAIN": os.getenv("MAILGUN_SENDER_DOMAIN"),
-}
-
-EMAIL_BACKEND = 'anymail.backends.mailgun.EmailBackend'
-SERVER_EMAIL = os.getenv("SERVER_EMAIL")
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = "smtp.elasticemail.com"
+EMAIL_PORT = 2525
+EMAIL_HOST_USER = os.getenv("HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("HOST_PASSWORD")
+EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
-
 SITE_NAME = "Streamline"
 
 
